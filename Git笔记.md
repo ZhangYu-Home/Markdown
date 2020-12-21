@@ -124,7 +124,7 @@ ID指的是某个部分hash序列码。该命令本质上就是将工作区、�
 
 # 8. 关于分支
 
-![](D:\Program\Markdown\Branch.png)
+![](./Branch.png)
 
 ## 8.1 分支的好处
 
@@ -158,7 +158,7 @@ ID指的是某个部分hash序列码。该命令本质上就是将工作区、�
 
 （1）冲突表现：
 
-![](D:\Program\Markdown\Conflict.png)
+![](./Conflict.png)
 
 （2）解决冲突：
 
