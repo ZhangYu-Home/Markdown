@@ -126,8 +126,6 @@ ID指的是某个部分hash序列码。该命令本质上就是将工作区、�
 
 ![image](./Branch.png)
 
-![image](https://github.com/ZhangYu-Home/Markdown/blob/main/Branch.png)
-
 ## 8.1 分支的好处
 
 （1）同时并行推进多个功能开发，提高开发效率
