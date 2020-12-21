@@ -124,7 +124,9 @@ ID指的是某个部分hash序列码。该命令本质上就是将工作区、�
 
 # 8. 关于分支
 
-![](./Branch.png)
+![image](./Branch.png)
+
+![image](https://github.com/ZhangYu-Home/Markdown/blob/main/Branch.png)
 
 ## 8.1 分支的好处
 
