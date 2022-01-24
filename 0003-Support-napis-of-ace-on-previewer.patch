@@ -1,0 +1,311 @@
+From 2075a2bda5898774822973f797c152465fe9faaf Mon Sep 17 00:00:00 2001
+From: hwx1119949 <3052854011@qq.com>
+Date: Mon, 24 Jan 2022 17:25:36 +0800
+Subject: [PATCH 3/3] Support napis of ace on previewer
+
+Signed-off-by: hwx1119949 <3052854011@qq.com>
+---
+ adapter/preview/entrance/samples/BUILD.gn     | 45 +++++++++++++++----
+ adapter/preview/sdk/BUILD.gn                  | 15 +++++++
+ .../common/plugin_adapter/plugin_bridge.h     |  2 +-
+ frameworks/core/common/ace_application_info.h |  2 +-
+ .../common/layout/grid_system_manager.h       |  4 +-
+ interfaces/napi/kits/configuration/BUILD.gn   | 26 +++++++++++
+ interfaces/napi/kits/device/BUILD.gn          | 26 +++++++++++
+ interfaces/napi/kits/grid/BUILD.gn            | 26 +++++++++++
+ 8 files changed, 134 insertions(+), 12 deletions(-)
+
+diff --git a/adapter/preview/entrance/samples/BUILD.gn b/adapter/preview/entrance/samples/BUILD.gn
+index 01aee48f..2ef45d75 100644
+--- a/adapter/preview/entrance/samples/BUILD.gn
++++ b/adapter/preview/entrance/samples/BUILD.gn
+@@ -38,7 +38,7 @@ template("ace_test") {
+     sources = [ "ace_${device}_test.cpp" ]
+ 
+     deps = [
+-      ":copy_media_query_shared_library_for_test(${current_toolchain})",
++      ":copy_napi_modules_shared_library_for_test(${current_toolchain})",
+       ":copy_napi_shared_library_for_test(${current_toolchain})",
+       ":copy_resource_dynamic_library(${current_toolchain})",
+       "$ace_napi:ace_napi(${current_toolchain})",
+@@ -142,19 +142,48 @@ ohos_copy("copy_napi_shared_library_for_test") {
+   }
+ }
+ 
+-ohos_copy("copy_media_query_shared_library_for_test") {
+-  shared_library_path =
++ohos_copy("copy_napi_modules_shared_library_for_test") {
++  mediaquery_path =
+       get_label_info("$ace_root/interfaces/napi/kits/media_query:mediaquery",
+                      "root_out_dir")
+-  deps = [ "$ace_root/interfaces/napi/kits/media_query:mediaquery" ]
++  prompt_path = get_label_info("$ace_root/interfaces/napi/kits/prompt:prompt",
++                                 "root_out_dir")
++  router_path = get_label_info("$ace_root/interfaces/napi/kits/router:router",
++                                 "root_out_dir")
++  configuration_path = get_label_info("$ace_root/interfaces/napi/kits/configuration:configuration",
++                                 "root_out_dir")
++  device_path = get_label_info("$ace_root/interfaces/napi/kits/device:device",
++                                 "root_out_dir")
++  grid_path = get_label_info("$ace_root/interfaces/napi/kits/grid:grid",
++                                 "root_out_dir")
++  deps = [
++    "$ace_root/interfaces/napi/kits/media_query:mediaquery",
++    "$ace_root/interfaces/napi/kits/prompt:prompt",
++    "$ace_root/interfaces/napi/kits/router:router",
++    "$ace_root/interfaces/napi/kits/configuration:configuration",
++    "$ace_root/interfaces/napi/kits/device:device",
++    "$ace_root/interfaces/napi/kits/grid:grid",
++  ]
+   if (use_mac) {
+-    sources =
+-        [ "$shared_library_path/ace/ace_engine_standard/libmediaquery.dylib" ]
++    sources = [
++      "$mediaquery_path/ace/ace_engine_standard/libmediaquery.dylib",
++      "$prompt_path/ace/ace_engine_standard/libprompt.dylib",
++      "$router_path/ace/ace_engine_standard/librouter.dylib",
++      "$configuration_path/ace/ace_engine_standard/libconfiguration.dylib",
++      "$device_path/ace/ace_engine_standard/libdevice.dylib",
++      "$grid_path/ace/ace_engine_standard/libgrid.dylib",
++    ]
+     outputs = [ root_build_dir +
+                 "/clang_x64/common/common/module/{{source_file_part}}" ]
+   } else {
+-    sources =
+-        [ "$shared_library_path/ace/ace_engine_standard/libmediaquery.dll" ]
++    sources = [
++      "$mediaquery_path/ace/ace_engine_standard/libmediaquery.dll",
++      "$prompt_path/ace/ace_engine_standard/libprompt.dll",
++      "$router_path/ace/ace_engine_standard/librouter.dll",
++      "$configuration_path/ace/ace_engine_standard/libconfiguration.dll",
++      "$device_path/ace/ace_engine_standard/libdevice.dll",
++      "$grid_path/ace/ace_engine_standard/libgrid.dll",
++    ]
+     outputs = [ root_build_dir +
+                 "/mingw_x86_64/common/common/module/{{source_file_part}}" ]
+   }
+diff --git a/adapter/preview/sdk/BUILD.gn b/adapter/preview/sdk/BUILD.gn
+index bfdd1dc5..9b44867d 100644
+--- a/adapter/preview/sdk/BUILD.gn
++++ b/adapter/preview/sdk/BUILD.gn
+@@ -112,22 +112,37 @@ if (is_standard_system) {
+                                  "root_out_dir")
+     router_path = get_label_info("$ace_root/interfaces/napi/kits/router:router",
+                                  "root_out_dir")
++    configuration_path = get_label_info("$ace_root/interfaces/napi/kits/configuration:configuration",
++                                 "root_out_dir")
++    device_path = get_label_info("$ace_root/interfaces/napi/kits/device:device",
++                                 "root_out_dir")
++    grid_path = get_label_info("$ace_root/interfaces/napi/kits/grid:grid",
++                                 "root_out_dir")                             
+     deps = [
+       "$ace_root/interfaces/napi/kits/media_query:mediaquery",
+       "$ace_root/interfaces/napi/kits/prompt:prompt",
+       "$ace_root/interfaces/napi/kits/router:router",
++      "$ace_root/interfaces/napi/kits/configuration:configuration",
++      "$ace_root/interfaces/napi/kits/device:device",
++      "$ace_root/interfaces/napi/kits/grid:grid",
+     ]
+     if (use_mac) {
+       sources = [
+         "$mediaquery_path/ace/ace_engine_standard/libmediaquery.dylib",
+         "$prompt_path/ace/ace_engine_standard/libprompt.dylib",
+         "$router_path/ace/ace_engine_standard/librouter.dylib",
++        "$configuration_path/ace/ace_engine_standard/libconfiguration.dylib",
++        "$device_path/ace/ace_engine_standard/libdevice.dylib",
++        "$grid_path/ace/ace_engine_standard/libgrid.dylib",
+       ]
+     } else {
+       sources = [
+         "$mediaquery_path/ace/ace_engine_standard/libmediaquery.dll",
+         "$prompt_path/ace/ace_engine_standard/libprompt.dll",
+         "$router_path/ace/ace_engine_standard/librouter.dll",
++        "$configuration_path/ace/ace_engine_standard/libconfiguration.dll",
++        "$device_path/ace/ace_engine_standard/libdevice.dll",
++        "$grid_path/ace/ace_engine_standard/libgrid.dll",
+       ]
+     }
+     outputs =
+diff --git a/frameworks/bridge/common/plugin_adapter/plugin_bridge.h b/frameworks/bridge/common/plugin_adapter/plugin_bridge.h
+index 520b4666..b25d7ee1 100644
+--- a/frameworks/bridge/common/plugin_adapter/plugin_bridge.h
++++ b/frameworks/bridge/common/plugin_adapter/plugin_bridge.h
+@@ -23,7 +23,7 @@
+ 
+ namespace OHOS::Ace::Framework {
+ 
+-class ACE_FORCE_EXPORT PluginBridge {
++class ACE_FORCE_EXPORT_WITH_PREVIEW PluginBridge {
+ public:
+     static std::pair<std::string, bool> GetDeviceInfo();
+ 
+diff --git a/frameworks/core/common/ace_application_info.h b/frameworks/core/common/ace_application_info.h
+index 930e8d42..4b2a2371 100644
+--- a/frameworks/core/common/ace_application_info.h
++++ b/frameworks/core/common/ace_application_info.h
+@@ -33,7 +33,7 @@ struct AceBundleInfo {
+     std::string versionName;
+ };
+ 
+-class ACE_FORCE_EXPORT AceApplicationInfo : public NonCopyable {
++class ACE_FORCE_EXPORT_WITH_PREVIEW AceApplicationInfo : public NonCopyable {
+ public:
+     ACE_EXPORT static AceApplicationInfo& GetInstance();
+ 
+diff --git a/frameworks/core/components/common/layout/grid_system_manager.h b/frameworks/core/components/common/layout/grid_system_manager.h
+index 65ff7ae9..b0db1ee2 100644
+--- a/frameworks/core/components/common/layout/grid_system_manager.h
++++ b/frameworks/core/components/common/layout/grid_system_manager.h
+@@ -33,7 +33,7 @@ struct SystemGridInfo {
+     SystemGridInfo(GridSizeType sizeType, const Dimension& gutter, const Dimension& margin, int32_t columns)
+         : sizeType(sizeType), gutter(gutter), margin(margin), columns(columns), maxColumns(columns)
+     {}
+-    ACE_FORCE_EXPORT std::string ToString() const;
++    ACE_FORCE_EXPORT_WITH_PREVIEW std::string ToString() const;
+ 
+     GridSizeType sizeType = GridSizeType::UNDEFINED;
+     Dimension gutter;
+@@ -42,7 +42,7 @@ struct SystemGridInfo {
+     int32_t maxColumns = 0;
+ };
+ 
+-class ACE_FORCE_EXPORT GridSystemManager final {
++class ACE_FORCE_EXPORT_WITH_PREVIEW GridSystemManager final {
+ public:
+     ~GridSystemManager() = default;
+     ACE_EXPORT static GridSystemManager& GetInstance();
+diff --git a/interfaces/napi/kits/configuration/BUILD.gn b/interfaces/napi/kits/configuration/BUILD.gn
+index 088e97fb..ddc029fd 100644
+--- a/interfaces/napi/kits/configuration/BUILD.gn
++++ b/interfaces/napi/kits/configuration/BUILD.gn
+@@ -14,6 +14,14 @@
+ import("//build/ohos.gni")
+ import("//foundation/ace/ace_engine/ace_config.gni")
+ 
++config("configuration_config") {
++  cflags = [
++    "-std=c++17",
++    "-Wno-c99-designator",
++    "-Wno-unknown-warning-option",
++  ]
++}
++
+ ohos_shared_library("configuration") {
+   include_dirs = [
+     "//utils/native/base/include",
+@@ -28,6 +36,24 @@ ohos_shared_library("configuration") {
+     "//foundation/ace/napi/:ace_napi",
+   ]
+ 
++  if (use_mingw_win) {
++    deps -= [ "$ace_root/build:libace" ]
++    deps += [ "$ace_root/adapter/preview/build:libace_engine_windows" ]
++    configs = [ ":configuration_config" ]
++    defines = [
++      "_USE_MATH_DEFINES",
++      "WINDOWS_PLATFORM",
++    ]
++  } else if (use_mac) {
++    deps -= [ "$ace_root/build:libace" ]
++    deps += [ "$ace_root/adapter/preview/build:libace_engine_mac" ]
++    configs = [ ":configuration_config" ]
++    defines = [
++      "_USE_MATH_DEFINES",
++      "MAC_PLATFORM",
++    ]
++  }
++  
+   relative_install_dir = "module"
+ 
+   subsystem_name = "ace"
+diff --git a/interfaces/napi/kits/device/BUILD.gn b/interfaces/napi/kits/device/BUILD.gn
+index f5588c55..bcd33323 100644
+--- a/interfaces/napi/kits/device/BUILD.gn
++++ b/interfaces/napi/kits/device/BUILD.gn
+@@ -14,6 +14,14 @@
+ import("//build/ohos.gni")
+ import("//foundation/ace/ace_engine/ace_config.gni")
+ 
++config("device_config") {
++  cflags = [
++    "-std=c++17",
++    "-Wno-c99-designator",
++    "-Wno-unknown-warning-option",
++  ]
++}
++
+ ohos_shared_library("device") {
+   include_dirs = [
+     "//utils/native/base/include",
+@@ -29,6 +37,24 @@ ohos_shared_library("device") {
+     "//foundation/ace/napi/:ace_napi",
+   ]
+ 
++  if (use_mingw_win) {
++    deps -= [ "$ace_root/build:libace" ]
++    deps += [ "$ace_root/adapter/preview/build:libace_engine_windows" ]
++    configs = [ ":device_config" ]
++    defines = [
++      "_USE_MATH_DEFINES",
++      "WINDOWS_PLATFORM",
++    ]
++  } else if (use_mac) {
++    deps -= [ "$ace_root/build:libace" ]
++    deps += [ "$ace_root/adapter/preview/build:libace_engine_mac" ]
++    configs = [ ":device_config" ]
++    defines = [
++      "_USE_MATH_DEFINES",
++      "MAC_PLATFORM",
++    ]
++  }
++
+   relative_install_dir = "module"
+ 
+   subsystem_name = "ace"
+diff --git a/interfaces/napi/kits/grid/BUILD.gn b/interfaces/napi/kits/grid/BUILD.gn
+index c9389b9a..5907ec6a 100644
+--- a/interfaces/napi/kits/grid/BUILD.gn
++++ b/interfaces/napi/kits/grid/BUILD.gn
+@@ -14,6 +14,14 @@
+ import("//build/ohos.gni")
+ import("//foundation/ace/ace_engine/ace_config.gni")
+ 
++config("grid_config") {
++  cflags = [
++    "-std=c++17",
++    "-Wno-c99-designator",
++    "-Wno-unknown-warning-option",
++  ]
++}
++
+ ohos_shared_library("grid") {
+   include_dirs = [
+     "//foundation/ace",
+@@ -30,6 +38,24 @@ ohos_shared_library("grid") {
+ 
+   relative_install_dir = "module"
+ 
++  if (use_mingw_win) {
++    deps -= [ "$ace_root/build:libace" ]
++    deps += [ "$ace_root/adapter/preview/build:libace_engine_windows" ]
++    configs = [ ":grid_config" ]
++    defines = [
++      "_USE_MATH_DEFINES",
++      "WINDOWS_PLATFORM",
++    ]
++  } else if (use_mac) {
++    deps -= [ "$ace_root/build:libace" ]
++    deps += [ "$ace_root/adapter/preview/build:libace_engine_mac" ]
++    configs = [ ":grid_config" ]
++    defines = [
++      "_USE_MATH_DEFINES",
++      "MAC_PLATFORM",
++    ]
++  }
++
+   subsystem_name = "ace"
+   part_name = ace_engine_part
+ }
+-- 
+2.25.1
+
